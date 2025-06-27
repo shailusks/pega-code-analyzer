@@ -69,19 +69,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const currentProvider = selectedLlmProvider;
 
-    if (currentProvider === LlmProvider.GEMINI) {
-      const envKey = envApiKeys[LlmProvider.GEMINI];
-      setEffectiveApiKey(envKey || ''); // Set for `isConfigReadyForAnalysis` check
-      setEffectiveAzureEndpoint('');
-      if (envKey) {
-        setApiKeyStatusMessage(`Using Google API Key from environment. Analysis is enabled.`);
-      } else {
-        setApiKeyStatusMessage(`Google API Key (API_KEY) not found in environment. Gemini analysis is disabled.`);
-      }
-      return;
-    }
-
-    // Logic for other providers (OpenAI, Azure)
     const envKey = envApiKeys[currentProvider];
     const userKey = userSetApiKeys[currentProvider];
     let currentEffectiveKey = '';
@@ -219,15 +206,7 @@ const App: React.FC = () => {
     let apiKeyIsSet = !!effectiveApiKey;
     let endpointIsSetForAzure = selectedLlmProvider !== LlmProvider.AZURE_OPENAI || (selectedLlmProvider === LlmProvider.AZURE_OPENAI && !!effectiveAzureEndpoint);
 
-    if (selectedLlmProvider === LlmProvider.GEMINI && !envApiKeys[LlmProvider.GEMINI]) {
-        setError(`Google API Key (API_KEY) not found in environment. Please set it to enable Gemini analysis.`);
-        setIsLoading(false);
-        setAnalysisData(null);
-        setActiveTabFileName(null);
-        return;
-    }
-
-    if (selectedLlmProvider !== LlmProvider.GEMINI && (!apiKeyIsSet || !endpointIsSetForAzure)) {
+    if (!apiKeyIsSet || !endpointIsSetForAzure) {
       let missingConfigError = `API Key for ${LLM_PROVIDER_NAMES[selectedLlmProvider]} is not set. `;
       if (selectedLlmProvider === LlmProvider.AZURE_OPENAI && !endpointIsSetForAzure) {
         missingConfigError += `Azure OpenAI Endpoint URL is also required. `;
@@ -410,13 +389,8 @@ const App: React.FC = () => {
   const handleSendMessageToChat = useCallback(async (targetFileName: string, itemId: string, userMessage: string) => {
     let apiKeyIsSet = !!effectiveApiKey;
     let endpointIsSetForAzure = selectedLlmProvider !== LlmProvider.AZURE_OPENAI || (selectedLlmProvider === LlmProvider.AZURE_OPENAI && !!effectiveAzureEndpoint);
-    let isGeminiReady = selectedLlmProvider === LlmProvider.GEMINI && !!envApiKeys[LlmProvider.GEMINI];
-
-    if (!isGeminiReady && selectedLlmProvider === LlmProvider.GEMINI) {
-      setError(`Google API Key is missing from environment. Cannot send chat message.`);
-      return;
-    }
-    if (selectedLlmProvider !== LlmProvider.GEMINI && (!apiKeyIsSet || !endpointIsSetForAzure)) {
+    
+    if (!apiKeyIsSet || !endpointIsSetForAzure) {
       setError(`Required configuration for ${LLM_PROVIDER_NAMES[selectedLlmProvider]} is missing. Cannot send chat message.`);
       return;
     }
@@ -468,9 +442,8 @@ const App: React.FC = () => {
   const commonButtonClasses = "w-full sm:w-auto font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center";
   
   const isConfigReadyForAnalysis = 
-      (selectedLlmProvider === LlmProvider.GEMINI && !!envApiKeys[LlmProvider.GEMINI]) ||
       (selectedLlmProvider === LlmProvider.AZURE_OPENAI && !!effectiveApiKey && !!effectiveAzureEndpoint) ||
-      (selectedLlmProvider === LlmProvider.OPENAI && !!effectiveApiKey);
+      (selectedLlmProvider !== LlmProvider.AZURE_OPENAI && !!effectiveApiKey);
 
   const analyzeCodeButtonDisabled = isLoading || !xmlInput.trim() || !!chatProcessingItemId || !!zipFile || !isConfigReadyForAnalysis;
   const analyzePackageButtonDisabled = isLoading || !zipFile || !!chatProcessingItemId || xmlInput.trim() !== '' || !isConfigReadyForAnalysis;
@@ -518,62 +491,56 @@ const App: React.FC = () => {
                 {apiKeyStatusMessage}
             </p>
             
-            {selectedLlmProvider !== LlmProvider.GEMINI ? (
-                <>
-                    {showApiKeySuccess && (
-                        <div className="mb-3 p-3 bg-green-100 text-green-700 rounded-md text-sm">
-                            Configuration for {LLM_PROVIDER_NAMES[selectedLlmProvider]} set successfully!
-                        </div>
-                    )}
-                    <div className="space-y-3">
-                        <input
-                            id="apiKeyInput"
-                            type="password"
-                            value={apiKeyInputValues[selectedLlmProvider]}
-                            onChange={handleApiKeyInputChange}
-                            placeholder={`Enter ${LLM_PROVIDER_NAMES[selectedLlmProvider]} API Key`}
-                            className="w-full p-3 border border-slate-400 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                            aria-label={`${LLM_PROVIDER_NAMES[selectedLlmProvider]} API Key Input`}
-                        />
-                        {selectedLlmProvider === LlmProvider.AZURE_OPENAI && (
-                            <input
-                                id="azureEndpointInput"
-                                type="text"
-                                value={azureEndpointInputValue}
-                                onChange={handleAzureEndpointInputChange}
-                                placeholder="Enter Azure OpenAI Endpoint URL (e.g., https://your-resource.openai.azure.com/)"
-                                className="w-full p-3 border border-slate-400 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                                aria-label="Azure OpenAI Endpoint URL Input"
-                            />
-                        )}
-                        <button
-                            onClick={handleSetUserApiKeyAndEndpoint}
-                            className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-75 transition-colors duration-150 w-full sm:w-auto"
-                        >
-                            Set Configuration
-                        </button>
+            <>
+                {showApiKeySuccess && (
+                    <div className="mb-3 p-3 bg-green-100 text-green-700 rounded-md text-sm">
+                        Configuration for {LLM_PROVIDER_NAMES[selectedLlmProvider]} set successfully!
                     </div>
-                    {userSetApiKeys[selectedLlmProvider] && (
-                        <button
-                            onClick={() => {
-                                setUserSetApiKeys(prev => ({ ...prev, [selectedLlmProvider]: '' }));
-                                setApiKeyInputValues(prev => ({ ...prev, [selectedLlmProvider]: '' }));
-                                if (selectedLlmProvider === LlmProvider.AZURE_OPENAI) {
-                                    setUserSetAzureEndpoint('');
-                                    setAzureEndpointInputValue('');
-                                }
-                            }}
-                            className="mt-3 text-xs text-red-500 hover:text-red-700 underline"
-                        >
-                            Clear user-set configuration for {LLM_PROVIDER_NAMES[selectedLlmProvider]}
-                        </button>
+                )}
+                <div className="space-y-3">
+                    <input
+                        id="apiKeyInput"
+                        type="password"
+                        value={apiKeyInputValues[selectedLlmProvider]}
+                        onChange={handleApiKeyInputChange}
+                        placeholder={`Enter ${LLM_PROVIDER_NAMES[selectedLlmProvider]} API Key`}
+                        className="w-full p-3 border border-slate-400 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        aria-label={`${LLM_PROVIDER_NAMES[selectedLlmProvider]} API Key Input`}
+                    />
+                    {selectedLlmProvider === LlmProvider.AZURE_OPENAI && (
+                        <input
+                            id="azureEndpointInput"
+                            type="text"
+                            value={azureEndpointInputValue}
+                            onChange={handleAzureEndpointInputChange}
+                            placeholder="Enter Azure OpenAI Endpoint URL (e.g., https://your-resource.openai.azure.com/)"
+                            className="w-full p-3 border border-slate-400 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                            aria-label="Azure OpenAI Endpoint URL Input"
+                        />
                     )}
-                </>
-            ) : (
-                 <div className="mt-2 p-3 bg-slate-100 border border-slate-300 rounded-md">
-                    <p className="text-sm text-slate-600">For Google Gemini, the API key is sourced securely from the `API_KEY` environment variable. User input is disabled for this provider.</p>
+                    <button
+                        onClick={handleSetUserApiKeyAndEndpoint}
+                        className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-3 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-opacity-75 transition-colors duration-150 w-full sm:w-auto"
+                    >
+                        Set Configuration
+                    </button>
                 </div>
-            )}
+                {userSetApiKeys[selectedLlmProvider] && (
+                    <button
+                        onClick={() => {
+                            setUserSetApiKeys(prev => ({ ...prev, [selectedLlmProvider]: '' }));
+                            setApiKeyInputValues(prev => ({ ...prev, [selectedLlmProvider]: '' }));
+                            if (selectedLlmProvider === LlmProvider.AZURE_OPENAI) {
+                                setUserSetAzureEndpoint('');
+                                setAzureEndpointInputValue('');
+                            }
+                        }}
+                        className="mt-3 text-xs text-red-500 hover:text-red-700 underline"
+                    >
+                        Clear user-set configuration for {LLM_PROVIDER_NAMES[selectedLlmProvider]}
+                    </button>
+                )}
+            </>
           </div>
         
         <div className="bg-white p-6 sm:p-8 rounded-xl shadow-xl space-y-8">

@@ -3,21 +3,21 @@ import { PegaRuleAnalysis, PegaAnalysisError, isPegaAnalysisError, SeverityLevel
 
 const generateUUID = () => crypto.randomUUID();
 
-// This function will now ignore the apiKey parameter and use the environment variable.
 export const analyzePegaXmlGemini: AnalysisFunction = async (
   xml: string, 
-  _apiKey: string, // We ignore this to conform to the type, but use process.env
+  apiKey: string, 
   systemInstruction: string,
   modelName: string
 ): Promise<PegaRuleAnalysis | PegaAnalysisError> => {
-  if (!process.env.API_KEY) {
-    return { error: "Google API Key is not configured. Please set the API_KEY environment variable." };
+  const effectiveApiKey = apiKey || process.env.API_KEY;
+  if (!effectiveApiKey) {
+    return { error: "Google API Key not provided. Please enter a key in the UI or set the API_KEY environment variable." };
   }
   if (!xml.trim()) {
     return { error: "XML input provided for analysis is empty." };
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: effectiveApiKey });
 
   const userPrompt = `Here is the Pega XML code to analyze:\n---\n${xml}\n---`;
 
@@ -71,7 +71,7 @@ export const analyzePegaXmlGemini: AnalysisFunction = async (
   } catch (e: any) {
     console.error("Error analyzing Pega XML with Gemini:", e);
     if (e.message && (e.message.toLowerCase().includes("api key not valid") || e.message.toLowerCase().includes("invalid api key"))) {
-        return { error: "The configured Google API Key is invalid. Please check the environment variable." };
+        return { error: "The provided Google API Key is invalid. Please check your input or the environment variable." };
     }
     if (e instanceof SyntaxError) {
       return { error: "Failed to parse the analysis response from Gemini. The AI may have returned non-JSON content or encountered an issue." };
@@ -88,18 +88,19 @@ export const getChatResponseForFeedbackItemGemini: ChatFunction = async (
   itemContext: FeedbackItem,
   currentChatHistory: ChatMessage[],
   userQuery: string,
-  _apiKey: string, // We ignore this to conform to the type, but use process.env
+  apiKey: string, 
   systemInstructionTemplate: (area: string, issue: string, suggestion: string) => string,
   modelName: string
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
+  const effectiveApiKey = apiKey || process.env.API_KEY;
+  if (!effectiveApiKey) {
     return "Google API Key is not configured. Cannot process chat.";
   }
    if (itemContext.isIgnored) {
     return "This feedback item has been marked as ignored. Further discussion is disabled.";
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: effectiveApiKey });
 
   const systemInstruction = systemInstructionTemplate(
     itemContext.area,
