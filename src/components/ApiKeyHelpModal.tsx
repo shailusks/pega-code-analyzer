@@ -27,7 +27,10 @@ const ApiKeyHelpModal: React.FC<ApiKeyHelpModalProps> = ({ isOpen, onClose, sele
 
   const renderGeminiHelp = () => (
     <>
-      <p>This application is configured to use the Google Gemini API Key from an environment variable (`API_KEY`) for enhanced security. You need to configure this variable in the environment where you are running this application.</p>
+      <p>You can provide your Google Gemini API Key in two ways: by entering it directly into the UI (recommended for quick testing) or by setting an environment variable named <code className="bg-gray-200 p-1 rounded">API_KEY</code> (recommended for better security).</p>
+      <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded-md text-sm">
+        <p><strong className="font-semibold">Note:</strong> An API key entered in the UI will always take precedence over an environment variable.</p>
+      </div>
       <p className="mt-4">To obtain your API Key:</p>
       <ol className="list-decimal list-inside space-y-2 pl-4">
         <li>
@@ -45,12 +48,10 @@ const ApiKeyHelpModal: React.FC<ApiKeyHelpModalProps> = ({ isOpen, onClose, sele
         </li>
         <li>Your new API key will be displayed. Copy this key.</li>
         <li>
-          Set this key as an environment variable named `API_KEY` in your application's deployment environment. You may need to restart the application for the new variable to take effect.
+          Return to this application, paste the copied key into the API key input field, and click <strong className="font-semibold">"Set Configuration"</strong>.
         </li>
       </ol>
-      <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-700 rounded-md text-sm">
-        <p><strong className="font-semibold">Note:</strong> You cannot enter this key directly into the application's UI. It must be provided through the environment.</p>
-      </div>
+      
     </>
   );
 

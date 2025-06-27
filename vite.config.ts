@@ -1,17 +1,11 @@
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import path from 'path';
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-
+export default defineConfig(() => {
   return {
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src'),
+        '@': path.resolve(__dirname, 'src'), // Adjust this if you’ve changed your structure
       },
     },
     build: {
