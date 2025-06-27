@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pega LSA Assistant - Code Analyzer</title>
+    
+    <!-- Tailwind CDN for quick styling (can be removed if using PostCSS setup) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Local CSS file bundled by Vite -->
+    <link rel="stylesheet" href="/src/index.css" />
+
+    <!-- Optional shim for browser compatibility (only if needed) -->
+    <script>
+      if (typeof window !== 'undefined' && typeof window.process === 'undefined') {
+        window.process = { env: {} };
+      }
+    </script>
+  </head>
+  <body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>
