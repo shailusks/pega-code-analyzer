@@ -1,0 +1,6 @@
+{
+  "name": "Pega LSA Assistant - Code Analyser",
+  "description": "An AI-powered web application that analyzes Pega XML code snippets using Gemini. It provides a detailed review based on Pega best practices, including an overall score, summary, and itemized feedback on issues and suggestions.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
